@@ -1,16 +1,29 @@
-# React + Vite
+# 🏓 torneijirillos - Gestor de Torneos de Tenis de Mesa
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+**torneijirillos** es una aplicación web React en español para la gestión completa de torneos de Tenis de Mesa (Ping Pong), desde la fase de grupos hasta la coronación del campeón en eliminación directa.
 
-Currently, two official plugins are available:
+## 🌟 Características
+- **Fase de Configuración**: Configuración dinámica de N grupos (de 1 a 200 grupos, hasta 800 jugadores).
+- **Fase de Grupos (Todos contra Todos)**: 6 enfrentamientos automáticos por grupo.
+- **Calculadora Punto por Punto (Sets)**: Registro de puntos por set con determinación automática del ganador del set y del partido.
+- **Tabla de Posiciones ITTF en Vivo**: Puntos (Victoria=2, Derrota=1) y criterios de desempate ITTF (enfrentamiento directo y ratio de sets en empates triples).
+- **Cuadro Eliminatorio Directo (Knockout)**:
+  - Clasificación de los 2 mejores de cada grupo.
+  - Distribución equitativa y separación en mitades opuestas para jugadores del mismo grupo.
+  - Asignación automática de pases directos (BYE) según rendimiento.
+  - Árbol interactivo con desplazamiento horizontal y celebración con confeti para el Campeón.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Despliegue en GitHub Pages
 
-## React Compiler
+```bash
+# 1. Vincular el repositorio remoto de GitHub
+git remote add origin https://github.com/TU_USUARIO/torneijirillos.git
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+# 2. Empujar el código a GitHub
+git push -u origin main
 
-## Expanding the Oxlint configuration
+# 3. Desplegar automáticamente en GitHub Pages
+npm run deploy
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+La aplicación se publicará en: `https://TU_USUARIO.github.io/torneijirillos/`
