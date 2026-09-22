@@ -47,7 +47,7 @@ export function generateInitialGroups(numGroups) {
  * Partido 5: P1 vs P4
  * Partido 6: P2 vs P3
  */
-export function generateGroupMatches(groups) {
+export function generateGroupMatches(groups, existingMatchesMap = {}) {
   const matchesByGroup = {};
 
   groups.forEach((group) => {
@@ -61,18 +61,29 @@ export function generateGroupMatches(groups) {
       { p1: p[1], p2: p[2], matchNum: 6 }
     ];
 
-    matchesByGroup[group.index] = matchups.map((m, idx) => ({
-      id: `G${group.index}_M${idx + 1}`,
-      groupId: group.index,
-      matchNum: m.matchNum,
-      player1: m.p1,
-      player2: m.p2,
-      score1: null,
-      score2: null,
-      completed: false,
-      winnerId: null,
-      setDetails: null
-    }));
+    const existingList = existingMatchesMap[group.index];
+    if (existingList && existingList.length === 6) {
+      // Preservar marcadores existentes actualizando únicamente los datos/nombres de los jugadores
+      matchesByGroup[group.index] = existingList.map((m, idx) => ({
+        ...m,
+        player1: matchups[idx].p1,
+        player2: matchups[idx].p2
+      }));
+    } else {
+      // Generar enfrentamientos nuevos para un grupo recién añadido
+      matchesByGroup[group.index] = matchups.map((m, idx) => ({
+        id: `G${group.index}_M${idx + 1}`,
+        groupId: group.index,
+        matchNum: m.matchNum,
+        player1: m.p1,
+        player2: m.p2,
+        score1: null,
+        score2: null,
+        completed: false,
+        winnerId: null,
+        setDetails: null
+      }));
+    }
   });
 
   return matchesByGroup;

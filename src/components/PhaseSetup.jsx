@@ -2,25 +2,57 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Users, Play, Sparkles, Plus, Minus, Trash2, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { generateInitialGroups } from "../utils/tournamentLogic";
 
-export default function PhaseSetup({ onGenerateGroupStage }) {
-  const [numGroups, setNumGroups] = useState(3);
-  const [groupsData, setGroupsData] = useState([]);
+export default function PhaseSetup({ initialNumGroups = 3, initialGroups = [], onGenerateGroupStage }) {
+  const [numGroups, setNumGroups] = useState(initialNumGroups || (initialGroups && initialGroups.length) || 3);
+  const [groupsData, setGroupsData] = useState(() => {
+    if (initialGroups && initialGroups.length > 0) {
+      return initialGroups;
+    }
+    return generateInitialGroups(initialNumGroups || 3);
+  });
+
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 12;
 
+  // Sincronizar estado cuando cambian los props del torneo activo
   useEffect(() => {
-    const validN = Math.max(1, Math.min(200, numGroups || 1));
-    setGroupsData(generateInitialGroups(validN));
+    const targetN = initialNumGroups || (initialGroups && initialGroups.length) || 3;
+    setNumGroups(targetN);
+    if (initialGroups && initialGroups.length > 0) {
+      setGroupsData(initialGroups);
+    } else {
+      setGroupsData(generateInitialGroups(targetN));
+    }
     setCurrentPage(1);
-  }, [numGroups]);
+  }, [initialNumGroups, initialGroups]);
 
   const handleGroupCountChange = (val) => {
     let parsed = parseInt(val);
     if (isNaN(parsed)) parsed = 1;
     if (parsed < 1) parsed = 1;
     if (parsed > 200) parsed = 200;
+
     setNumGroups(parsed);
+
+    setGroupsData((prev) => {
+      if (parsed === prev.length) return prev;
+
+      if (parsed < prev.length) {
+        // Reducir manteniendo los primeros grupos
+        return prev.slice(0, parsed);
+      } else {
+        // Ampliar manteniendo nombres ingresados previamente
+        const newTotalGroups = generateInitialGroups(parsed);
+        const merged = newTotalGroups.map((g, idx) => {
+          if (idx < prev.length) {
+            return prev[idx];
+          }
+          return g;
+        });
+        return merged;
+      }
+    });
   };
 
   const handlePlayerNameChange = (groupIndex, playerIndex, newName) => {

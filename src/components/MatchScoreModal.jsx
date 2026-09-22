@@ -18,9 +18,8 @@ export default function MatchScoreModal({ match, onClose, onSaveScore }) {
   const [directScore1, setDirectScore1] = useState(match.score1 !== null ? match.score1 : "");
   const [directScore2, setDirectScore2] = useState(match.score2 !== null ? match.score2 : "");
 
-  if (!match) return null;
-
   const setSummary = useMemo(() => {
+    if (!match) return { p1SetsWon: 0, p2SetsWon: 0, evaluatedSets: [], isFinished: false, winnerId: null };
     let p1SetsWon = 0;
     let p2SetsWon = 0;
     const evaluatedSets = [];
