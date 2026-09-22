@@ -31,10 +31,15 @@ export default function PhaseKnockoutBracket({ bracketData, onUpdateWinner, onRe
   };
 
   const handleMatchClick = (matchNode) => {
-    if (matchNode.isByeMatch || matchNode.completed && matchNode.player2?.isBye) {
+    if (matchNode.isByeMatch || (matchNode.completed && matchNode.player2?.isBye)) {
       return;
     }
-    if (matchNode.player1 && matchNode.player2) {
+    if (
+      matchNode.player1 &&
+      matchNode.player2 &&
+      !matchNode.player1.isPlaceholder &&
+      !matchNode.player2.isPlaceholder
+    ) {
       setSelectedMatch(matchNode);
     }
   };
@@ -51,7 +56,7 @@ export default function PhaseKnockoutBracket({ bracketData, onUpdateWinner, onRe
             Cuadro del Torneo <span className="title-gradient">Interactivo</span>
           </h2>
           <p className="text-slate-400 text-sm">
-            Sembrado aplicado: Enfrentamientos 1.º vs 2.º, separación por mitades opuestas del mismo grupo, y {numByes} pase{numByes === 1 ? '' : 's'} directo{numByes === 1 ? '' : 's'} (BYE). Haz clic en cualquier partido para registrar el resultado.
+            Sembrado aplicado: Enfrentamientos 1.º vs 2.º, separación por mitades opuestas del mismo grupo, y {numByes} pase{numByes === 1 ? '' : 's'} directo{numByes === 1 ? '' : 's'} (BYE). Haz clic en cualquier partido listo para registrar el resultado.
           </p>
         </div>
 
@@ -83,12 +88,35 @@ export default function PhaseKnockoutBracket({ bracketData, onUpdateWinner, onRe
 
                 <div className="flex flex-col justify-around flex-grow space-y-6">
                   {roundNodes.map((mNode) => {
-                    const canClick = Boolean(mNode.player1 && mNode.player2 && !mNode.player2?.isBye);
                     const p1 = mNode.player1;
                     const p2 = mNode.player2;
 
+                    const p1IsPlaceholder = Boolean(p1?.isPlaceholder);
+                    const p2IsPlaceholder = Boolean(p2?.isPlaceholder);
+
+                    const canClick = Boolean(
+                      p1 &&
+                      p2 &&
+                      !p1IsPlaceholder &&
+                      !p2IsPlaceholder &&
+                      !p2?.isBye
+                    );
+
                     const p1IsWinner = mNode.completed && mNode.winner?.id === p1?.id;
                     const p2IsWinner = mNode.completed && mNode.winner?.id === p2?.id;
+
+                    let pendingStatusText = null;
+                    if (p1IsPlaceholder && p2IsPlaceholder) {
+                      if (p1.groupLabel === p2.groupLabel) {
+                        pendingStatusText = `Esperando finalización de Grupo ${p1.groupLabel}`;
+                      } else {
+                        pendingStatusText = `Esperando finalización de Grupos ${p1.groupLabel} y ${p2.groupLabel}`;
+                      }
+                    } else if (p1IsPlaceholder) {
+                      pendingStatusText = `Esperando finalización de Grupo ${p1.groupLabel}`;
+                    } else if (p2IsPlaceholder) {
+                      pendingStatusText = `Esperando finalización de Grupo ${p2.groupLabel}`;
+                    }
 
                     return (
                       <div
@@ -113,7 +141,9 @@ export default function PhaseKnockoutBracket({ bracketData, onUpdateWinner, onRe
                               <CheckCircle2 className="w-3 h-3" /> Completado
                             </span>
                           ) : canClick ? (
-                            <span className="text-[#ff763b] font-sans">Clic para Anotar</span>
+                            <span className="text-[#ff763b] font-sans font-bold">Clic para Anotar</span>
+                          ) : pendingStatusText ? (
+                            <span className="text-amber-400/90 font-sans text-[10px] font-semibold">{pendingStatusText}</span>
                           ) : (
                             <span className="text-slate-500">Esperando clasificados</span>
                           )}
@@ -124,17 +154,23 @@ export default function PhaseKnockoutBracket({ bracketData, onUpdateWinner, onRe
                           className={`flex items-center justify-between p-2 rounded-lg mb-1.5 transition-colors ${
                             p1IsWinner
                               ? "bg-emerald-950/40 border border-emerald-500/40 text-white font-bold"
+                              : p1IsPlaceholder
+                              ? "bg-amber-950/20 border border-dashed border-amber-500/40 text-amber-300 font-medium"
                               : p1
                               ? "bg-slate-900/80 text-slate-200"
                               : "bg-slate-950/40 text-slate-600 italic"
                           }`}
                         >
                           <div className="flex items-center gap-2 truncate pr-2">
-                            {p1?.groupLabel && (
+                            {p1IsPlaceholder ? (
+                              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold whitespace-nowrap">
+                                Pendiente Grupo {p1.groupLabel}
+                              </span>
+                            ) : p1?.groupLabel ? (
                               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-bold">
                                 {p1.groupLabel}{p1.groupRank}
                               </span>
-                            )}
+                            ) : null}
                             <span className="text-xs truncate">{p1 ? p1.name : "Por determinar"}</span>
                           </div>
                           {mNode.completed && mNode.score1 !== null && (
@@ -151,17 +187,23 @@ export default function PhaseKnockoutBracket({ bracketData, onUpdateWinner, onRe
                               ? "bg-emerald-950/40 border border-emerald-500/40 text-white font-bold"
                               : p2?.isBye
                               ? "bg-amber-950/20 text-amber-400 font-mono text-xs font-bold border border-amber-500/30"
+                              : p2IsPlaceholder
+                              ? "bg-amber-950/20 border border-dashed border-amber-500/40 text-amber-300 font-medium"
                               : p2
                               ? "bg-slate-900/80 text-slate-200"
                               : "bg-slate-950/40 text-slate-600 italic"
                           }`}
                         >
                           <div className="flex items-center gap-2 truncate pr-2">
-                            {p2?.groupLabel && (
+                            {p2IsPlaceholder ? (
+                              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold whitespace-nowrap">
+                                Pendiente Grupo {p2.groupLabel}
+                              </span>
+                            ) : p2?.groupLabel ? (
                               <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-bold">
                                 {p2.groupLabel}{p2.groupRank}
                               </span>
-                            )}
+                            ) : null}
                             <span className="text-xs truncate">{p2 ? p2.name : "Por determinar"}</span>
                           </div>
                           {mNode.completed && mNode.score2 !== null && (

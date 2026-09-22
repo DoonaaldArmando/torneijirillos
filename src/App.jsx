@@ -6,6 +6,7 @@ import PhaseKnockoutBracket from "./components/PhaseKnockoutBracket";
 import {
   generateGroupMatches,
   generateKnockoutBracket,
+  syncBracketWithGroupResults,
   updateBracketNodeWinner
 } from "./utils/tournamentLogic";
 
@@ -38,14 +39,28 @@ export default function App() {
           setDetails
         };
       });
-      return { ...prev, [groupId]: updatedList };
+      const newMatchesMap = { ...prev, [groupId]: updatedList };
+
+      // Sincronizar automáticamente el cuadro eliminatorio si ya existe
+      setBracketData((prevBracket) => {
+        if (prevBracket && prevBracket.rounds && prevBracket.rounds.length > 0) {
+          return syncBracketWithGroupResults(prevBracket, groups, newMatchesMap);
+        }
+        return prevBracket;
+      });
+
+      return newMatchesMap;
     });
   };
 
-  // Phase 2 -> Phase 3 Transition
+  // Phase 2 -> Phase 3 Transition / Early Generation
   const handleGenerateKnockout = () => {
-    const bracket = generateKnockoutBracket(groups, matchesMap);
-    setBracketData(bracket);
+    setBracketData((prev) => {
+      if (prev && prev.rounds && prev.rounds.length > 0) {
+        return syncBracketWithGroupResults(prev, groups, matchesMap);
+      }
+      return generateKnockoutBracket(groups, matchesMap);
+    });
     setPhase("knockout");
   };
 
@@ -74,7 +89,14 @@ export default function App() {
       for (let r = 1; r <= prev.totalRounds; r++) {
         const roundNodes = currentRounds[r - 1];
         roundNodes.forEach((node, mIdx) => {
-          if (!node.completed && node.player1 && node.player2 && !node.player2.isBye) {
+          if (
+            !node.completed &&
+            node.player1 &&
+            node.player2 &&
+            !node.player1.isPlaceholder &&
+            !node.player2.isPlaceholder &&
+            !node.player2.isBye
+          ) {
             const preset = presets[Math.floor(Math.random() * presets.length)];
             const s1 = preset[0];
             const s2 = preset[1];
@@ -112,6 +134,8 @@ export default function App() {
         groupMatchesCompleted={groupMatchesCompleted}
         totalGroupMatches={totalGroupMatches}
         onReset={handleReset}
+        onSelectPhase={(targetPhase) => setPhase(targetPhase)}
+        onGenerateKnockout={handleGenerateKnockout}
       />
 
       {/* Dynamic Views */}

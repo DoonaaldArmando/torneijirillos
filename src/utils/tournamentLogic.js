@@ -254,7 +254,10 @@ export function generateKnockoutBracket(groups, groupMatchesMap) {
 
   groups.forEach((g) => {
     const standings = groupStandingsMap[g.index];
-    if (standings && standings.length >= 2) {
+    const gMatches = groupMatchesMap[g.index] || [];
+    const isFinished = gMatches.length === 6 && gMatches.every((m) => m.completed);
+
+    if (isFinished && standings && standings.length >= 2) {
       const winner = standings[0];
       const runnerUp = standings[1];
 
@@ -262,6 +265,7 @@ export function generateKnockoutBracket(groups, groupMatchesMap) {
         ...winner.player,
         groupLabel: g.label,
         groupRank: 1,
+        isPlaceholder: false,
         points: winner.points,
         gameRatio: winner.gameRatio,
         gameDiff: winner.gameDiff,
@@ -272,27 +276,53 @@ export function generateKnockoutBracket(groups, groupMatchesMap) {
         ...runnerUp.player,
         groupLabel: g.label,
         groupRank: 2,
+        isPlaceholder: false,
         points: runnerUp.points,
         gameRatio: runnerUp.gameRatio,
         gameDiff: runnerUp.gameDiff,
         gamesWon: runnerUp.gamesWon
       });
+    } else {
+      firsts.push({
+        id: `tbd_g${g.index}_p1`,
+        name: `1º Grupo ${g.label}`,
+        groupLabel: g.label,
+        groupRank: 1,
+        isPlaceholder: true,
+        points: 0,
+        gameRatio: 0,
+        gameDiff: 0,
+        gamesWon: 0
+      });
+
+      seconds.push({
+        id: `tbd_g${g.index}_p2`,
+        name: `2º Grupo ${g.label}`,
+        groupLabel: g.label,
+        groupRank: 2,
+        isPlaceholder: true,
+        points: 0,
+        gameRatio: 0,
+        gameDiff: 0,
+        gamesWon: 0
+      });
     }
   });
 
-  firsts.sort((a, b) => {
-    if (b.points !== a.points) return b.points - a.points;
-    if (Math.abs(b.gameRatio - a.gameRatio) > 0.001) return b.gameRatio - a.gameRatio;
-    if (b.gameDiff !== a.gameDiff) return b.gameDiff - a.gameDiff;
-    return b.gamesWon - a.gamesWon;
-  });
+  const sortPlayers = (arr) => {
+    arr.sort((a, b) => {
+      if (a.isPlaceholder !== b.isPlaceholder) {
+        return a.isPlaceholder ? 1 : -1;
+      }
+      if (b.points !== a.points) return b.points - a.points;
+      if (Math.abs(b.gameRatio - a.gameRatio) > 0.001) return b.gameRatio - a.gameRatio;
+      if (b.gameDiff !== a.gameDiff) return b.gameDiff - a.gameDiff;
+      return b.gamesWon - a.gamesWon;
+    });
+  };
 
-  seconds.sort((a, b) => {
-    if (b.points !== a.points) return b.points - a.points;
-    if (Math.abs(b.gameRatio - a.gameRatio) > 0.001) return b.gameRatio - a.gameRatio;
-    if (b.gameDiff !== a.gameDiff) return b.gameDiff - a.gameDiff;
-    return b.gamesWon - a.gamesWon;
-  });
+  sortPlayers(firsts);
+  sortPlayers(seconds);
 
   const N = groups.length;
   const totalAdvancing = 2 * N;
@@ -475,6 +505,128 @@ export function generateKnockoutBracket(groups, groupMatchesMap) {
     totalRounds,
     numByes,
     rounds
+  };
+}
+
+/**
+ * Sincroniza el cuadro eliminatorio existente con los resultados actualizados de los grupos.
+ */
+export function syncBracketWithGroupResults(bracketData, groups, groupMatchesMap) {
+  if (!bracketData || !bracketData.rounds || bracketData.rounds.length === 0) {
+    return bracketData;
+  }
+
+  const newRounds = JSON.parse(JSON.stringify(bracketData.rounds));
+
+  // Mapa de jugadores clasificados para grupos completados
+  const finishedGroupPlayers = {};
+  groups.forEach((g) => {
+    const gMatches = groupMatchesMap[g.index] || [];
+    const isFinished = gMatches.length === 6 && gMatches.every((m) => m.completed);
+    if (isFinished) {
+      const standings = calculateGroupStandings(g, gMatches);
+      if (standings && standings.length >= 2) {
+        finishedGroupPlayers[`${g.label}_1`] = {
+          ...standings[0].player,
+          groupLabel: g.label,
+          groupRank: 1,
+          isPlaceholder: false,
+          points: standings[0].points,
+          gameRatio: standings[0].gameRatio,
+          gameDiff: standings[0].gameDiff,
+          gamesWon: standings[0].gamesWon
+        };
+        finishedGroupPlayers[`${g.label}_2`] = {
+          ...standings[1].player,
+          groupLabel: g.label,
+          groupRank: 2,
+          isPlaceholder: false,
+          points: standings[1].points,
+          gameRatio: standings[1].gameRatio,
+          gameDiff: standings[1].gameDiff,
+          gamesWon: standings[1].gamesWon
+        };
+      }
+    }
+  });
+
+  // Sincronizar Ronda 1
+  const round1 = newRounds[0];
+  round1.forEach((node) => {
+    // Jugador 1
+    if (node.player1 && node.player1.groupLabel && node.player1.groupRank) {
+      const key = `${node.player1.groupLabel}_${node.player1.groupRank}`;
+      if (finishedGroupPlayers[key]) {
+        const resolvedP1 = finishedGroupPlayers[key];
+        const oldP1Id = node.player1.id;
+        node.player1 = resolvedP1;
+
+        if (node.player2 && node.player2.isBye) {
+          node.player2 = { id: `bye_${resolvedP1.id}`, name: "PASE DIRECTO (BYE)", isBye: true };
+        }
+
+        if (node.winner && (node.winner.isPlaceholder || node.winner.id === oldP1Id)) {
+          node.winner = resolvedP1;
+        }
+      }
+    }
+
+    // Jugador 2
+    if (node.player2 && node.player2.groupLabel && node.player2.groupRank) {
+      const key = `${node.player2.groupLabel}_${node.player2.groupRank}`;
+      if (finishedGroupPlayers[key]) {
+        const resolvedP2 = finishedGroupPlayers[key];
+        const oldP2Id = node.player2.id;
+        node.player2 = resolvedP2;
+
+        if (node.winner && (node.winner.isPlaceholder || node.winner.id === oldP2Id)) {
+          node.winner = resolvedP2;
+        }
+      }
+    }
+  });
+
+  // Propagar a rondas siguientes
+  for (let r = 1; r < newRounds.length; r++) {
+    const prevRound = newRounds[r - 1];
+    const currentRound = newRounds[r];
+
+    currentRound.forEach((node, mIdx) => {
+      const parent1 = prevRound[mIdx * 2];
+      const parent2 = prevRound[mIdx * 2 + 1];
+
+      const p1 = parent1 ? parent1.winner : null;
+      const p2 = parent2 ? parent2.winner : null;
+
+      node.player1 = p1;
+      node.player2 = p2;
+
+      if (p1 && p2 && (p1.isBye || p2.isBye)) {
+        node.winner = p1.isBye ? p2 : p1;
+        node.completed = true;
+        node.score1 = p1.isBye ? 0 : 3;
+        node.score2 = p1.isBye ? 3 : 0;
+      } else if (node.winner) {
+        if (node.winner.isPlaceholder) {
+          if (p1 && p1.groupLabel === node.winner.groupLabel && p1.groupRank === node.winner.groupRank) {
+            node.winner = p1;
+          } else if (p2 && p2.groupLabel === node.winner.groupLabel && p2.groupRank === node.winner.groupRank) {
+            node.winner = p2;
+          }
+        }
+        if (node.winner && node.winner.id !== p1?.id && node.winner.id !== p2?.id) {
+          node.winner = null;
+          node.completed = false;
+          node.score1 = null;
+          node.score2 = null;
+        }
+      }
+    });
+  }
+
+  return {
+    ...bracketData,
+    rounds: newRounds
   };
 }
 

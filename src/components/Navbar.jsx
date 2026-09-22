@@ -1,13 +1,15 @@
 import React, { useState } from "react";
 import { Trophy, RefreshCw, Layers, Award, CheckCircle2, AlertTriangle } from "lucide-react";
 
-export default function Navbar({ phase, totalGroups, groupMatchesCompleted, totalGroupMatches, onReset }) {
+export default function Navbar({ phase, totalGroups, groupMatchesCompleted, totalGroupMatches, onReset, onSelectPhase, onGenerateKnockout }) {
   const [showConfirmReset, setShowConfirmReset] = useState(false);
 
   const handleConfirmReset = () => {
     setShowConfirmReset(false);
     onReset();
   };
+
+  const isTournamentStarted = phase !== 'setup' && totalGroups > 0;
 
   return (
     <header className="sticky top-0 z-50 backdrop-blur-xl bg-[#07090e]/80 border-b border-white/10 px-4 lg:px-8 py-3.5 mb-6">
@@ -30,26 +32,55 @@ export default function Navbar({ phase, totalGroups, groupMatchesCompleted, tota
         {/* Stepper Progress */}
         <div className="hidden md:flex items-center gap-2 bg-slate-900/80 px-4 py-1.5 rounded-full border border-white/10">
           {/* Fase 1 */}
-          <div className={`flex items-center gap-1.5 text-xs font-semibold ${phase === 'setup' ? 'text-[#ff5e1e]' : phase === 'groups' || phase === 'knockout' || phase === 'champion' ? 'text-emerald-400' : 'text-slate-500'}`}>
+          <button
+            type="button"
+            onClick={() => isTournamentStarted && onSelectPhase && onSelectPhase('setup')}
+            disabled={!isTournamentStarted}
+            className={`flex items-center gap-1.5 text-xs font-semibold transition-colors ${
+              phase === 'setup' ? 'text-[#ff5e1e]' : 'text-emerald-400 cursor-pointer hover:text-emerald-300'
+            }`}
+          >
             {phase !== 'setup' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <div className="w-2 h-2 rounded-full bg-[#ff5e1e] animate-ping" />}
             1. Configuración
-          </div>
+          </button>
 
           <span className="text-slate-700">/</span>
 
           {/* Fase 2 */}
-          <div className={`flex items-center gap-1.5 text-xs font-semibold ${phase === 'groups' ? 'text-[#ff5e1e]' : phase === 'knockout' || phase === 'champion' ? 'text-emerald-400' : 'text-slate-500'}`}>
-            {phase === 'knockout' || phase === 'champion' ? <CheckCircle2 className="w-3.5 h-3.5" /> : phase === 'groups' ? <div className="w-2 h-2 rounded-full bg-[#ff5e1e] animate-ping" /> : null}
+          <button
+            type="button"
+            onClick={() => isTournamentStarted && onSelectPhase && onSelectPhase('groups')}
+            disabled={!isTournamentStarted}
+            className={`flex items-center gap-1.5 text-xs font-semibold transition-colors ${
+              phase === 'groups'
+                ? 'text-[#ff5e1e]'
+                : isTournamentStarted
+                ? 'text-slate-300 cursor-pointer hover:text-[#ff763b]'
+                : 'text-slate-500 cursor-not-allowed'
+            }`}
+          >
+            {phase === 'knockout' || phase === 'champion' ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : phase === 'groups' ? <div className="w-2 h-2 rounded-full bg-[#ff5e1e] animate-ping" /> : null}
             2. Fase de Grupos
-          </div>
+          </button>
 
           <span className="text-slate-700">/</span>
 
           {/* Fase 3 */}
-          <div className={`flex items-center gap-1.5 text-xs font-semibold ${phase === 'knockout' ? 'text-[#ff5e1e]' : phase === 'champion' ? 'text-emerald-400' : 'text-slate-500'}`}>
+          <button
+            type="button"
+            onClick={() => isTournamentStarted && onGenerateKnockout && onGenerateKnockout()}
+            disabled={!isTournamentStarted}
+            className={`flex items-center gap-1.5 text-xs font-semibold transition-colors ${
+              phase === 'knockout'
+                ? 'text-[#ff5e1e]'
+                : isTournamentStarted
+                ? 'text-slate-300 cursor-pointer hover:text-[#ff763b]'
+                : 'text-slate-500 cursor-not-allowed'
+            }`}
+          >
             {phase === 'champion' ? <Award className="w-3.5 h-3.5 text-amber-400" /> : phase === 'knockout' ? <div className="w-2 h-2 rounded-full bg-[#ff5e1e] animate-ping" /> : null}
             3. Cuadro Eliminatorio
-          </div>
+          </button>
         </div>
 
         {/* Action Controls */}

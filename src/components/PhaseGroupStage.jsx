@@ -326,17 +326,16 @@ export default function PhaseGroupStage({ groups, matchesMap, onUpdateMatchScore
           </h3>
           <p className="text-xs text-slate-400">
             {overallStats.isAllCompleted
-              ? "¡Todos los partidos se han completado! Los 2 mejores jugadores de cada grupo han clasificado."
-              : `Completa los ${overallStats.total} partidos para desbloquear la generación del cuadro eliminatorio.`}
+              ? "¡Todos los partidos se han completado! Cuadro eliminatorio totalmente poblado."
+              : `Progreso: ${overallStats.completed} de ${overallStats.total} partidos completados. Puedes ver o generar el cuadro en cualquier momento.`}
           </p>
         </div>
 
         <button
           onClick={onGenerateKnockout}
-          disabled={!overallStats.isAllCompleted}
-          className="btn btn-primary text-base py-3.5 px-8 font-bold flex items-center gap-2 shadow-2xl disabled:opacity-50"
+          className="btn btn-primary text-base py-3.5 px-8 font-bold flex items-center gap-2 shadow-2xl"
         >
-          Generar Cuadro Eliminatorio <ArrowRight className="w-5 h-5" />
+          Ver / Generar Cuadro Eliminatorio <ArrowRight className="w-5 h-5" />
         </button>
       </div>
 
