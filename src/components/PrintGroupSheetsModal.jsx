@@ -101,7 +101,7 @@ export default function PrintGroupSheetsModal({ tournamentName, groups, matchesM
             <td style="border: 1px solid #000000; padding: 1.5pt 4pt; text-align: center; font-weight: bold; font-size: 8pt;">#${mIdx + 1}</td>
             <td style="border: 1px solid #000000; padding: 1.5pt 4pt; text-align: right; font-size: 8pt;">${p1Name}</td>
             <td style="border: 1px solid #000000; padding: 1.5pt 4pt; text-align: left; font-size: 8pt;">${p2Name}</td>
-            <td style="border: 1px solid #000000; padding: 1.5pt 4pt; text-align: center; font-family: 'Courier New', monospace; font-size: 8pt; white-space: nowrap;">( &nbsp;&nbsp;&nbsp;&nbsp; - &nbsp;&nbsp;&nbsp;&nbsp; ) &nbsp;&nbsp;&nbsp; ( &nbsp;&nbsp;&nbsp;&nbsp; - &nbsp;&nbsp;&nbsp;&nbsp; ) &nbsp;&nbsp;&nbsp; ( &nbsp;&nbsp;&nbsp;&nbsp; - &nbsp;&nbsp;&nbsp;&nbsp; ) &nbsp;&nbsp;&nbsp; ( &nbsp;&nbsp;&nbsp;&nbsp; - &nbsp;&nbsp;&nbsp;&nbsp; ) &nbsp;&nbsp;&nbsp; ( &nbsp;&nbsp;&nbsp;&nbsp; - &nbsp;&nbsp;&nbsp;&nbsp; )</td>
+            <td style="border: 1px solid #000000; padding: 1.5pt 4pt; text-align: center; font-family: 'Courier New', monospace; font-size: 8pt; white-space: nowrap;">&nbsp;</td>
           </tr>
         `;
       });
@@ -164,7 +164,7 @@ export default function PrintGroupSheetsModal({ tournamentName, groups, matchesM
             <td style="border: 1px solid #000000; padding: 1.5pt 4pt; text-align: center; font-weight: bold; font-size: 8pt;">#${mIdx + 1}</td>
             <td style="border: 1px solid #000000; padding: 1.5pt 4pt; text-align: right; font-size: 8pt;">${p1Name}</td>
             <td style="border: 1px solid #000000; padding: 1.5pt 4pt; text-align: left; font-size: 8pt;">${p2Name}</td>
-            <td style="border: 1px solid #000000; padding: 1.5pt 4pt; text-align: center; font-family: 'Courier New', monospace; font-size: 8pt; white-space: nowrap;">( &nbsp;&nbsp;&nbsp;&nbsp; - &nbsp;&nbsp;&nbsp;&nbsp; ) &nbsp;&nbsp;&nbsp; ( &nbsp;&nbsp;&nbsp;&nbsp; - &nbsp;&nbsp;&nbsp;&nbsp; ) &nbsp;&nbsp;&nbsp; ( &nbsp;&nbsp;&nbsp;&nbsp; - &nbsp;&nbsp;&nbsp;&nbsp; ) &nbsp;&nbsp;&nbsp; ( &nbsp;&nbsp;&nbsp;&nbsp; - &nbsp;&nbsp;&nbsp;&nbsp; ) &nbsp;&nbsp;&nbsp; ( &nbsp;&nbsp;&nbsp;&nbsp; - &nbsp;&nbsp;&nbsp;&nbsp; )</td>
+            <td style="border: 1px solid #000000; padding: 1.5pt 4pt; text-align: center; font-family: 'Courier New', monospace; font-size: 8pt; white-space: nowrap;">&nbsp;</td>
           </tr>
         `;
       });
@@ -341,7 +341,7 @@ export default function PrintGroupSheetsModal({ tournamentName, groups, matchesM
                                 {p2Name}
                               </td>
                               <td className="border border-slate-400 py-0.5 px-1 text-center font-mono text-[9px] text-slate-600 whitespace-nowrap">
-                                <span>(&nbsp;&nbsp;-&nbsp;&nbsp;) (&nbsp;&nbsp;-&nbsp;&nbsp;) (&nbsp;&nbsp;-&nbsp;&nbsp;) (&nbsp;&nbsp;-&nbsp;&nbsp;) (&nbsp;&nbsp;-&nbsp;&nbsp;)</span>
+                                &nbsp;
                               </td>
                             </tr>
                           );
