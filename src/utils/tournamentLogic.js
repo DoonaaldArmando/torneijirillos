@@ -529,6 +529,16 @@ export function syncBracketWithGroupResults(bracketData, groups, groupMatchesMap
 
   const newRounds = JSON.parse(JSON.stringify(bracketData.rounds));
 
+  // Mapa global de nombres actualizados por id de jugador
+  const playerMap = {};
+  (groups || []).forEach((g) => {
+    (g.players || []).forEach((p) => {
+      if (p && p.id) {
+        playerMap[p.id] = p;
+      }
+    });
+  });
+
   // Mapa de jugadores clasificados para grupos completados
   const finishedGroupPlayers = {};
   groups.forEach((g) => {
@@ -595,9 +605,20 @@ export function syncBracketWithGroupResults(bracketData, groups, groupMatchesMap
         }
       }
     }
+
+    // Asegurar actualización de nombre en Ronda 1
+    if (node.player1 && playerMap[node.player1.id]) {
+      node.player1.name = playerMap[node.player1.id].name;
+    }
+    if (node.player2 && playerMap[node.player2.id]) {
+      node.player2.name = playerMap[node.player2.id].name;
+    }
+    if (node.winner && playerMap[node.winner.id]) {
+      node.winner.name = playerMap[node.winner.id].name;
+    }
   });
 
-  // Propagar a rondas siguientes
+  // Propagar a rondas siguientes (Semifinales, Finales, etc.)
   for (let r = 1; r < newRounds.length; r++) {
     const prevRound = newRounds[r - 1];
     const currentRound = newRounds[r];
@@ -625,12 +646,27 @@ export function syncBracketWithGroupResults(bracketData, groups, groupMatchesMap
             node.winner = p2;
           }
         }
-        if (node.winner && node.winner.id !== p1?.id && node.winner.id !== p2?.id) {
+        if (node.winner && node.winner.id === p1?.id) {
+          node.winner = p1;
+        } else if (node.winner && node.winner.id === p2?.id) {
+          node.winner = p2;
+        } else if (node.winner && node.winner.id !== p1?.id && node.winner.id !== p2?.id) {
           node.winner = null;
           node.completed = false;
           node.score1 = null;
           node.score2 = null;
         }
+      }
+
+      // Asegurar actualización de nombre para rondas avanzadas (Semifinal / Final)
+      if (node.player1 && playerMap[node.player1.id]) {
+        node.player1.name = playerMap[node.player1.id].name;
+      }
+      if (node.player2 && playerMap[node.player2.id]) {
+        node.player2.name = playerMap[node.player2.id].name;
+      }
+      if (node.winner && playerMap[node.winner.id]) {
+        node.winner.name = playerMap[node.winner.id].name;
       }
     });
   }
@@ -638,6 +674,92 @@ export function syncBracketWithGroupResults(bracketData, groups, groupMatchesMap
   return {
     ...bracketData,
     rounds: newRounds
+  };
+}
+
+/**
+ * Actualiza el nombre de un jugador en todas las fases del torneo:
+ * Grupos, Enfrentamientos de Grupos, y Cuadro Eliminatorio (incluyendo ganadores de rondas).
+ */
+export function updatePlayerNameInTournament(tournament, playerId, newName) {
+  if (!tournament || !playerId || newName === undefined || newName === null) return tournament;
+
+  const trimmedName = newName.trim();
+  if (!trimmedName) return tournament;
+
+  // 1. Actualizar en la lista de grupos
+  const updatedGroups = (tournament.groups || []).map((g) => ({
+    ...g,
+    players: (g.players || []).map((p) => {
+      if (p.id === playerId) {
+        return { ...p, name: trimmedName };
+      }
+      return p;
+    })
+  }));
+
+  // 2. Actualizar en los enfrentamientos de grupos
+  const updatedMatchesMap = {};
+  Object.keys(tournament.matchesMap || {}).forEach((groupId) => {
+    updatedMatchesMap[groupId] = (tournament.matchesMap[groupId] || []).map((m) => {
+      let updatedP1 = m.player1;
+      let updatedP2 = m.player2;
+
+      if (m.player1 && m.player1.id === playerId) {
+        updatedP1 = { ...m.player1, name: trimmedName };
+      }
+      if (m.player2 && m.player2.id === playerId) {
+        updatedP2 = { ...m.player2, name: trimmedName };
+      }
+
+      return {
+        ...m,
+        player1: updatedP1,
+        player2: updatedP2
+      };
+    });
+  });
+
+  // 3. Actualizar en el cuadro eliminatorio
+  let updatedBracket = tournament.bracketData;
+  if (updatedBracket && updatedBracket.rounds && updatedBracket.rounds.length > 0) {
+    const updatedRounds = updatedBracket.rounds.map((round) =>
+      round.map((node) => {
+        let p1 = node.player1;
+        let p2 = node.player2;
+        let winner = node.winner;
+
+        if (p1 && p1.id === playerId) {
+          p1 = { ...p1, name: trimmedName };
+        }
+        if (p2 && p2.id === playerId) {
+          p2 = { ...p2, name: trimmedName };
+        }
+        if (winner && winner.id === playerId) {
+          winner = { ...winner, name: trimmedName };
+        }
+
+        return {
+          ...node,
+          player1: p1,
+          player2: p2,
+          winner
+        };
+      })
+    );
+
+    updatedBracket = syncBracketWithGroupResults(
+      { ...updatedBracket, rounds: updatedRounds },
+      updatedGroups,
+      updatedMatchesMap
+    );
+  }
+
+  return {
+    ...tournament,
+    groups: updatedGroups,
+    matchesMap: updatedMatchesMap,
+    bracketData: updatedBracket
   };
 }
 
@@ -687,6 +809,8 @@ export function updateBracketNodeWinner(rounds, targetRound, targetMatchIndex, w
         nextMatchNode.completed = false;
         nextMatchNode.score1 = null;
         nextMatchNode.score2 = null;
+      } else if (nextMatchNode.winner && nextMatchNode.winner.id === winnerObj?.id) {
+        nextMatchNode.winner = winnerObj;
       }
     }
   }

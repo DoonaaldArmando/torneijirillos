@@ -180,3 +180,47 @@ body {
   padding: 1.5rem;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
 }
+
+/* Printable Media Rules */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  #printable-area,
+  #printable-area * {
+    visibility: visible !important;
+  }
+
+  #printable-area {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .print-group-card {
+    border: 1.5px solid #000000 !important;
+    box-shadow: none !important;
+    margin-bottom: 1rem !important;
+    padding: 0.5rem !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .page-break-after {
+    break-after: page !important;
+    page-break-after: always !important;
+  }
+}

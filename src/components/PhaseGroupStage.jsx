@@ -1,12 +1,16 @@
 import React, { useState, useMemo } from "react";
-import { CheckCircle2, Trophy, ArrowRight, Zap, Edit3, Plus } from "lucide-react";
+import { CheckCircle2, Trophy, ArrowRight, Zap, Edit3, Plus, Printer } from "lucide-react";
 import { calculateGroupStandings } from "../utils/tournamentLogic";
 import MatchScoreModal from "./MatchScoreModal";
+import PrintGroupSheetsModal from "./PrintGroupSheetsModal";
 
-export default function PhaseGroupStage({ groups, matchesMap, onUpdateMatchScore, onGenerateKnockout, onAddGroup }) {
+export default function PhaseGroupStage({ groups, matchesMap, tournamentName, onUpdateMatchScore, onUpdatePlayerName, onGenerateKnockout, onAddGroup }) {
   const [selectedGroupIndex, setSelectedGroupIndex] = useState(0);
   const [editingMatch, setEditingMatch] = useState(null);
+  const [editingPlayer, setEditingPlayer] = useState(null);
+  const [newPlayerNameInput, setNewPlayerNameInput] = useState("");
   const [groupFilter, setGroupFilter] = useState("");
+  const [showPrintModal, setShowPrintModal] = useState(false);
 
   // State for Add Group modal
   const [showAddGroupModal, setShowAddGroupModal] = useState(false);
@@ -83,12 +87,21 @@ export default function PhaseGroupStage({ groups, matchesMap, onUpdateMatchScore
             </div>
           </div>
 
-          <button
-            onClick={() => setShowAddGroupModal(true)}
-            className="btn btn-secondary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5 whitespace-nowrap text-[#00f2fe] border-[#00f2fe]/40 hover:bg-[#00f2fe]/10"
-          >
-            <Plus className="w-4 h-4" /> Añadir Grupo
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowPrintModal(true)}
+              className="btn btn-secondary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5 whitespace-nowrap text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/10"
+            >
+              <Printer className="w-4 h-4" /> Imprimir Planillas
+            </button>
+
+            <button
+              onClick={() => setShowAddGroupModal(true)}
+              className="btn btn-secondary text-xs py-2.5 px-4 font-bold flex items-center gap-1.5 whitespace-nowrap text-[#00f2fe] border-[#00f2fe]/40 hover:bg-[#00f2fe]/10"
+            >
+              <Plus className="w-4 h-4" /> Añadir Grupo
+            </button>
+          </div>
         </div>
       </div>
 
@@ -238,6 +251,13 @@ export default function PhaseGroupStage({ groups, matchesMap, onUpdateMatchScore
                       >
                         {m.player2.name}
                       </div>
+
+                      {/* Parciales por Set */}
+                      {m.completed && m.setDetails && m.setDetails.length > 0 && (
+                        <div className="col-span-5 text-center text-[10px] font-mono text-slate-400 mt-1 pt-1 border-t border-white/5">
+                          Parciales: {m.setDetails.map((s) => `${s.p1Points}-${s.p2Points}`).join(", ")}
+                        </div>
+                      )}
                     </div>
 
                     {/* Botón Cargar Marcador */}
@@ -306,11 +326,24 @@ export default function PhaseGroupStage({ groups, matchesMap, onUpdateMatchScore
                           </td>
 
                           <td className="py-2.5">
-                            <div className="font-semibold text-white flex items-center gap-1.5">
-                              <span>{st.player.name}</span>
-                              {isQualifying && (
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 inline shrink-0" title="Posición de Clasificación Directa" />
-                              )}
+                            <div className="font-semibold text-white flex items-center justify-between gap-1.5 pr-2">
+                              <div className="flex items-center gap-1.5 truncate">
+                                <span className="truncate">{st.player.name}</span>
+                                {isQualifying && (
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 inline shrink-0" title="Posición de Clasificación Directa" />
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingPlayer(st.player);
+                                  setNewPlayerNameInput(st.player.name);
+                                }}
+                                className="p-1 rounded text-slate-400 hover:text-[#00f2fe] hover:bg-slate-800 transition-colors opacity-70 hover:opacity-100 shrink-0"
+                                title="Editar nombre del jugador"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
                             </div>
                             {st.tieBreakerReason && (
                               <div className="text-[10px] text-amber-300 font-mono mt-0.5">
@@ -422,6 +455,71 @@ export default function PhaseGroupStage({ groups, matchesMap, onUpdateMatchScore
             onUpdateMatchScore(editingMatch.groupId, matchId, s1, s2, winnerId, setDetails);
             setEditingMatch(null);
           }}
+        />
+      )}
+
+      {/* Modal: Editar Nombre de Jugador */}
+      {editingPlayer && (
+        <div className="modal-overlay">
+          <div className="modal-card max-w-md animate-fade-in">
+            <h3 className="text-xl font-extrabold text-white mb-2 flex items-center gap-2">
+              <Edit3 className="w-5 h-5 text-[#00f2fe]" /> Editar Nombre de Jugador
+            </h3>
+            <p className="text-xs text-slate-400 mb-4">
+              El nuevo nombre se actualizará en todos los partidos de grupo, la tabla de posiciones en vivo y el cuadro eliminatorio.
+            </p>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (newPlayerNameInput.trim() && onUpdatePlayerName) {
+                  onUpdatePlayerName(editingPlayer.id, newPlayerNameInput.trim());
+                }
+                setEditingPlayer(null);
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-400 mb-1">
+                  Nombre del Jugador
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newPlayerNameInput}
+                  onChange={(e) => setNewPlayerNameInput(e.target.value)}
+                  className="input-field text-sm font-medium"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setEditingPlayer(null)}
+                  className="btn btn-secondary text-xs px-4 py-2"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary text-xs px-5 py-2 font-bold"
+                >
+                  Guardar Nombre
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Imprimir Planillas de Grupos */}
+      {showPrintModal && (
+        <PrintGroupSheetsModal
+          tournamentName={tournamentName}
+          groups={groups}
+          matchesMap={matchesMap}
+          onClose={() => setShowPrintModal(false)}
         />
       )}
     </div>

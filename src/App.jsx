@@ -9,6 +9,7 @@ import {
   generateKnockoutBracket,
   syncBracketWithGroupResults,
   updateBracketNodeWinner,
+  updatePlayerNameInTournament,
   generateInitialGroups,
   getGroupLabel
 } from "./utils/tournamentLogic";
@@ -151,14 +152,49 @@ export default function App() {
     if (!activeTournament) return;
     const initialMatches = generateGroupMatches(groupsData, activeTournament.matchesMap || {});
 
+    let updatedBracket = activeTournament.bracketData;
+    if (updatedBracket && updatedBracket.rounds && updatedBracket.rounds.length > 0) {
+      // Sincronizar los nombres en las rondas existentes del cuadro
+      const updatedRounds = updatedBracket.rounds.map((round) =>
+        round.map((node) => {
+          let p1 = node.player1;
+          let p2 = node.player2;
+          let winner = node.winner;
+
+          groupsData.forEach((g) => {
+            g.players.forEach((p) => {
+              if (p1 && p1.id === p.id) p1 = { ...p1, name: p.name };
+              if (p2 && p2.id === p.id) p2 = { ...p2, name: p.name };
+              if (winner && winner.id === p.id) winner = { ...winner, name: p.name };
+            });
+          });
+
+          return { ...node, player1: p1, player2: p2, winner };
+        })
+      );
+      updatedBracket = syncBracketWithGroupResults(
+        { ...updatedBracket, rounds: updatedRounds },
+        groupsData,
+        initialMatches
+      );
+    }
+
     const updated = {
       ...activeTournament,
       numGroups: groupsData.length,
       groups: groupsData,
       matchesMap: initialMatches,
+      bracketData: updatedBracket,
       status: "groups"
     };
 
+    updateAndPersistActiveTournament(updated);
+  };
+
+  // Actualizar el nombre de un jugador dinámicamente durante el torneo
+  const handleUpdatePlayerName = (playerId, newName) => {
+    if (!activeTournament) return;
+    const updated = updatePlayerNameInTournament(activeTournament, playerId, newName);
     updateAndPersistActiveTournament(updated);
   };
 
@@ -415,7 +451,9 @@ export default function App() {
               <PhaseGroupStage
                 groups={groups}
                 matchesMap={matchesMap}
+                tournamentName={activeTournament?.name}
                 onUpdateMatchScore={handleUpdateMatchScore}
+                onUpdatePlayerName={handleUpdatePlayerName}
                 onGenerateKnockout={handleGenerateKnockout}
                 onAddGroup={handleAddGroup}
               />

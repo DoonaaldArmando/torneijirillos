@@ -133,7 +133,9 @@ export default function MatchScoreModal({ match, onClose, onSaveScore }) {
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <Award className="w-5 h-5 text-[#ff5e1e]" /> Registrar Resultado del Partido
             </h3>
-            <p className="text-xs text-slate-400">Ingresa los puntos por set para calcular los sets ganados y el ganador</p>
+            <p className="text-xs text-slate-400">
+              Ingresa los puntos por set (soporta partidos a 3, 4 o 5 sets como 3-0, 3-1, 3-2)
+            </p>
           </div>
           <button
             onClick={onClose}
